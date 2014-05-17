@@ -14,53 +14,55 @@ print len(funcs)
 
 def format(data):
     # this is ordered on purpose, so don't change it
-    funcs = ['j__objc_msgSend', 'objc_msgSend']
+    funcs = ['j__objc_msgSend', 'objc_msgSend', 'objc_msgSendSuper']
     built = ''
 
     def my_zip(one, two, filltwo):
         ''' no clue what this is for, sorry! '''
         l = []
         for i in range(max(len(one), len(two))):
-	        if i >= len(two): l.append((one[i], filltwo))
-	        elif i >= len(one): l.append(('', two[i]))
-	        else: l.append((one[i], two[i]))
-        return l 
+            if i >= len(two): l.append((one[i], filltwo))
+            elif i >= len(one): l.append(('', two[i]))
+            else: l.append((one[i], two[i]))
+        return l
 
     def make_method(parts):
-	    if len(parts) < 2: return None
+        if len(parts) < 2: return None
 
-	    cls = parts[0]
-	    if cls.find('&OBJC_CLASS___') == 0: cls = cls[14:]
-	    
-	    name = parts[1]
-	    if name[0] != '"' or name[-1] != '"': return None
-	    name = name[1:-1]
-	    name_parts = name.split(':')
-	    if name_parts[-1] == '': name_parts[-1] = None
-	    
-	    args = parts[2:] if len(parts) >= 3 else []
-	    
-	    build = '[%s' % cls
-	    if len(name_parts) == 1: 
-		    build += ' %s' % name_parts[0]
-	    else:
-		for part, arg in my_zip(name_parts, args, 'nil'):
-			    if part is not None: build += ' %s:%s' % (part, arg) 
-	    build += ']'
-	    
-	    return build
-    
+        cls = parts[0]
+        if cls.find('&OBJC_CLASS___') == 0: cls = cls[14:]
+        if cls.startswith('"') and cls.endswith('"'):
+            cls = cls.replace('"', '', 1).rsplit('"', 1)[0]
+
+        name = parts[1]
+        if name[0] != '"' or name[-1] != '"': return None
+        name = name[1:-1]
+        name_parts = name.split(':')
+        if name_parts[-1] == '': name_parts[-1] = None
+
+        args = parts[2:] if len(parts) >= 3 else []
+
+        build = '[%s' % cls
+        if len(name_parts) == 1:
+            build += ' %s' % name_parts[0]
+        else:
+            for part, arg in my_zip(name_parts, args, 'nil'):
+                if part is not None: build += ' %s:%s' % (part, arg)
+        build += ']'
+
+        return build
+
     for line in data.split('\n'):
         used = None
         for func in funcs:
-            if line.find(func + '(') != -1:
+            if func + '(' in line:
                 used = func
                 break
 
         index = -1 if used is None else line.find(used)
         if index != -1:
             parts = line[index + len(func) + 1:]
-		
+
             end_index = 0
             deep = 1
             for i, char in enumerate(parts):
@@ -68,9 +70,15 @@ def format(data):
                 if char == ')': deep -= 1
                 if deep == 0: break
                 end_index += 1
-			
+
             parts = parts[:end_index]
             parts = parts.split(', ')
+            if used == 'objc_msgSendSuper':
+                v = parts[0]
+                if v.startswith('&'):
+                    v = v.replace('&', '', 1)
+                parts[0] = '[{} super]'.format(v)
+
             new = make_method(parts)
             if new is not None:
                 line = line[:index] + new + line[index + len(func) + end_index + 2:]
@@ -122,14 +130,14 @@ class Method(object):
                 arg = None
             if len(name) > 0 and name[0] == ' ': name = name[1:]
 
-            parts.append((name, arg)) 
+            parts.append((name, arg))
         self.parts = parts
 
     def definition(self):
         r = self.type
         r += " "
         r += '(' + self.ret + ')'
-    
+
         i = 2
         for name, arg in self.parts:
             if i != 2: r += ' '
@@ -143,7 +151,7 @@ class Method(object):
 
         return r
 
-    def formatted(self): 
+    def formatted(self):
         b = format(self.body)
         return b
 
@@ -196,15 +204,3 @@ for cls, m in itertools.groupby(ms, lambda x: x.cls):
         out.write('\n')
 
     out.write('\n@end\n\n')
-
-
-
-    
-
-
-
-
-
-
-
-

@@ -1,0 +1,98 @@
+/*
+ * flow optimization
+ * "optimizing decompiler"
+ */
+
+    /*
+     * hex-rays decompiler
+     */
+
+    void *__cdecl sub_3001(void *a1, const char *a2, void *a3, int a4)
+    {
+      void *v4; // ebx@1
+      void *v5; // eax@1
+      void *v6; // eax@2
+      const char *v7; // eax@3
+      void *v8; // eax@6
+      void *v9; // eax@6
+
+      v4 = a3;
+      v5 = objc_msgSend("NSString", "class");
+      if ( !(unsigned __int8)objc_msgSend(a3, "isKindOfClass:", v5) )
+      {
+        v6 = objc_msgSend("NSNumber", "class");
+        if ( (unsigned __int8)objc_msgSend(a3, "isKindOfClass:", v6) )
+          v7 = "stringValue";
+        else
+          v7 = "description";
+        v4 = objc_msgSend(a3, v7);
+      }
+      v8 = objc_msgSend("NSAttributedString", "alloc");
+      v9 = objc_msgSend(v8, "initWithString:attributes:", v4, a4);
+      return objc_msgSend(v9, "autorelease");
+    }
+
+    /*
+     * chpwn's rays script + minor optimizations
+     */
+
+    {
+      v4 = a3;
+      v5 = [NSString class];
+      if ( !(unsigned __int8)[a3 isKindOfClass:v5] )
+      {
+        v6 = [NSNumber class];
+        if ( (unsigned __int8)[a3 isKindOfClass:v6] )
+          v7 = "stringValue";
+        else
+          v7 = "description";
+        v4 = objc_msgSend(a3, v7);
+      }
+      v8 = [NSAttributedString alloc];
+      v9 = [v8 initWithString:v4 attributes:a4];
+      return [v9 autorelease];
+    }
+
+    /*
+     * remove int casts for known truthy function
+     * inline [CLASSNAME class] calls
+     * avoid calling objc_msgSend with temporary variable where possible
+     */
+
+    {
+      v4 = a3;
+      if ( ![a3 isKindOfClass:[NSString class]] )
+      {
+        if ( [a3 isKindOfClass:[NSNumber class]] )
+          v4 = [a3 stringValue];
+        else
+          v4 = [a3 description];
+      }
+      v9 = [[NSAttributedString alloc] initWithString:v4 attributes:a4];
+      return [v9 autorelease];
+    }
+
+    /*
+     * retype void pointers?
+     */
+
+      void * == id?
+
+    /*
+     * full function
+     * add ternary for short braces-free if block
+     * decrement variable numbers (because we optimized out v6-v9)
+     */
+
+    id sub_3001(id a1, const char *a2, id a3, int a4)
+    {
+      id v4, v5;
+
+      v4 = a3;
+      if ( ![a3 isKindOfClass:[NSString class]] )
+      {
+        v4 = [a3 isKindOfClass:[NSNumber class]] ? [a3 stringValue] : [a3 description];
+      }
+      v5 = [[NSAttributedString alloc] initWithString:v4 attributes:a4];
+      return [v5 autorelease];
+    }
