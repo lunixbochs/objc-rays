@@ -10,11 +10,9 @@ hex_rays = funcs.pop()
 defs = funcs.pop()
 decl = funcs.pop()
 
-print len(funcs)
-
 def format(data):
     # this is ordered on purpose, so don't change it
-    funcs = ['j__objc_msgSend', 'objc_msgSend', 'objc_msgSendSuper']
+    funcs = ['j__objc_msgSend', 'objc_msgSend', 'objc_msgSendSuper', 'objc_msgSendSuper2', 'objc_msgSend_shim']
     built = ''
 
     def my_zip(one, two, filltwo):
@@ -52,6 +50,23 @@ def format(data):
 
         return build
 
+    data = data.replace('\r\n', '\n')
+    for func in funcs:
+        while func + '(\n' in data:
+            left, right = data.split(func + '(\n', 1)
+            end_index = 0
+            deep = 1
+            for i, c in enumerate(right):
+                if c == '(': deep += 1
+                if c == ')': deep -= 1
+                if deep == 0: break
+                end_index += 1
+            middle, right = right[:end_index], right[end_index:]
+            middle = ' '.join([s.strip() for s in middle.split('\n')])
+            data = left + func + '(' + middle + right
+
+    data = re.sub(r'CFSTR\(("[^"]+")\)', r'@\1', data)
+
     for line in data.split('\n'):
         used = None
         for func in funcs:
@@ -65,15 +80,15 @@ def format(data):
 
             end_index = 0
             deep = 1
-            for i, char in enumerate(parts):
-                if char == '(': deep += 1
-                if char == ')': deep -= 1
+            for i, c in enumerate(parts):
+                if c == '(': deep += 1
+                if c == ')': deep -= 1
                 if deep == 0: break
                 end_index += 1
 
             parts = parts[:end_index]
             parts = parts.split(', ')
-            if used == 'objc_msgSendSuper':
+            if used in ['objc_msgSendSuper', 'objc_msgSendSuper2']:
                 v = parts[0]
                 if v.startswith('&'):
                     v = v.replace('&', '', 1)
