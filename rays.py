@@ -10,6 +10,31 @@ hex_rays = funcs.pop()
 defs = funcs.pop()
 decl = funcs.pop()
 
+def parse_arg_split(s):
+    out = []
+    last = 0
+    escape = False
+    quote = None
+    for i, c in enumerate(s):
+        if escape:
+            escape = False
+            continue
+        elif c == '\\':
+            escape = True
+        if quote:
+            if c == quote:
+                quote = None
+        elif c in ('"', "'"):
+                quote = c
+        elif c == ',':
+            arg = s[last:i].strip()
+            out.append(arg)
+            last = i + 1
+    arg = s[last:]
+    if arg:
+        out.append(arg)
+    return out
+
 def format(data):
     # this is ordered on purpose, so don't change it
     funcs = ['j__objc_msgSend', 'objc_msgSend', 'objc_msgSendSuper', 'objc_msgSendSuper2', 'objc_msgSend_shim']
@@ -87,7 +112,7 @@ def format(data):
                 end_index += 1
 
             parts = parts[:end_index]
-            parts = parts.split(', ')
+            parts = parse_arg_split(parts)
             if used in ['objc_msgSendSuper', 'objc_msgSendSuper2']:
                 v = parts[0]
                 if v.startswith('&'):
