@@ -37,7 +37,7 @@ def parse_arg_split(s):
 
 def format(data):
     # this is ordered on purpose, so don't change it
-    funcs = ['j__objc_msgSend', 'objc_msgSend', 'objc_msgSendSuper', 'objc_msgSendSuper2', 'objc_msgSend_shim']
+    funcs = ['j__objc_msgSend', 'objc_msgSend', 'objc_msgSendSuper', 'objc_msgSendSuper2', 'objc_msgSend_shim', 'objc_msgSend_ptr']
     built = ''
 
     def my_zip(one, two, filltwo):
@@ -91,6 +91,8 @@ def format(data):
             data = left + func + '(' + middle + right
 
     data = re.sub(r'CFSTR\(("[^"]+")\)', r'@\1', data)
+    data = re.sub(r'selRef_(.+?)\b', r'"\1"', data)
+    data = data.replace('classRef_', '')
 
     for line in data.split('\n'):
         used = None
@@ -189,7 +191,7 @@ class Method(object):
                 r += name
             i += 1
 
-        return r
+        return r.strip()
 
     def formatted(self):
         b = format(self.body)
