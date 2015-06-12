@@ -5,7 +5,7 @@ data = open(sys.argv[1], 'r').read()
 if os.path.isdir(sys.argv[2]): shutil.rmtree(sys.argv[2])
 os.mkdir(sys.argv[2])
 
-funcs = list(re.split(".*--------------------------------------------------------", data))
+funcs = list(re.split(".*----------------------------------------------------", data))
 hex_rays = funcs.pop()
 defs = funcs.pop()
 decl = funcs.pop()
