@@ -57,7 +57,7 @@ def format(data):
         if cls.startswith('"') and cls.endswith('"'):
             cls = cls.replace('"', '', 1).rsplit('"', 1)[0]
 
-        name = parts[1]
+        name = parts[1].strip()
         if name[0] != '"' or name[-1] != '"': return None
         name = name[1:-1]
         name_parts = name.split(':')
