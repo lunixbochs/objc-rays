@@ -58,9 +58,9 @@ def format(data):
             cls = cls.replace('"', '', 1).rsplit('"', 1)[0]
 
         name = parts[1].strip()
-        if name[0] != '"' or name[-1] != '"': return None
-        name = name[1:-1]
-        name_parts = name.split(':')
+        if not name.startswith('selRef_'):
+            return None
+        name_parts = name.split('_')[1:]
         if name_parts[-1] == '': name_parts[-1] = None
 
         args = parts[2:] if len(parts) >= 3 else []
@@ -91,7 +91,6 @@ def format(data):
             data = left + func + '(' + middle + right
 
     data = re.sub(r'CFSTR\(("[^"]+")\)', r'@\1', data)
-    data = re.sub(r'selRef_(.+?)\b', r'"\1"', data)
     data = data.replace('classRef_', '')
 
     for line in data.split('\n'):
